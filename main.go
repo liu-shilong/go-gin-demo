@@ -4,23 +4,23 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/liu-shilong/go-gin-demo/pkg/setting"
+	"github.com/liu-shilong/go-gin-demo/routers"
 	"net/http"
 )
 
 func main() {
-	router := gin.Default()
-	router.GET("/test", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "test",
-		})
-	})
+	gin.SetMode(setting.RunMode)
+	routersInit := routers.InitRouter()
 
 	s := http.Server{
 		Addr:           fmt.Sprintf(":%d", setting.HTTPPort),
-		Handler:        router,
+		Handler:        routersInit,
 		ReadTimeout:    setting.ReadTimeout,
 		WriteTimeout:   setting.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
-	s.ListenAndServe()
+	err := s.ListenAndServe()
+	if err != nil {
+		return
+	}
 }
