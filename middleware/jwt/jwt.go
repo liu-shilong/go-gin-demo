@@ -1,43 +1,40 @@
 package jwt
 
 import (
-	"github.com/dgrijalva/jwt-go"
-	"github.com/liu-shilong/go-gin-demo/pkg/setting"
+	"github.com/gin-gonic/gin"
+	"github.com/liu-shilong/go-gin-demo/pkg/e"
+	"github.com/liu-shilong/go-gin-demo/util"
+	"net/http"
 	"time"
 )
 
-var jwtSecret = []byte(setting.JwtSecret)
+func JWT() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var code int
+		var data interface{}
 
-type Claims struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	jwt.StandardClaims
-}
-
-func GenerateToken(username, password string) (string, error) {
-	nowTime := time.Now()
-	expireTime := nowTime.Add(3 * time.Hour)
-	claims := Claims{
-		username,
-		password,
-		jwt.StandardClaims{
-			ExpiresAt: expireTime.Unix(),
-			Issuer:    "go-gin-demo",
-		},
-	}
-	tokenClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	token, err := tokenClaims.SignedString(jwtSecret)
-	return token, err
-}
-
-func ParseToken(token string) (*Claims, error) {
-	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return jwtSecret, nil
-	})
-	if tokenClaims != nil {
-		if claims, ok := tokenClaims.Claims.(*Claims); ok && tokenClaims.Valid {
-			return claims, nil
+		code = e.SUCCESS
+		token := c.Query("token")
+		if token == "" {
+			code = e.INVALID_PARAMS
+		} else {
+			claims, err := util.ParseToken(token)
+			if err != nil {
+				code = e.ERROR_AUTH_CHECK_TOKEN_FAIL
+			} else if time.Now().Unix() > claims.ExpiresAt {
+				code = e.ERROR_AUTH_CHECK_TOKEN_TIMEOUT
+			}
 		}
+
+		if code != e.SUCCESS {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"code": code,
+				"msg":  e.GetMsg(code),
+				"data": data,
+			})
+			c.Abort()
+			return
+		}
+		c.Next()
 	}
-	return nil, err
 }
