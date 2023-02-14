@@ -5,8 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/liu-shilong/go-gin-demo/models"
 	"github.com/liu-shilong/go-gin-demo/pkg/e"
+	"github.com/liu-shilong/go-gin-demo/pkg/logging"
 	"github.com/liu-shilong/go-gin-demo/util"
-	"log"
 	"net/http"
 )
 
@@ -39,7 +39,8 @@ func GetAuth(c *gin.Context) {
 		}
 	} else {
 		for _, err := range valid.Errors {
-			log.Printf("e.key: %s, e.val: %s", err.Key, err.Value)
+			// log.Printf("e.key: %s, e.val: %s", err.Key, err.Value)
+			logging.Info(err.Key, err.Message)
 		}
 	}
 
